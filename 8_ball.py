@@ -65,6 +65,7 @@ GREY = (128,128,128)
 LGREY= (211,211,211)
 DGREY = (169,169,169)
 DIMGREY = (105,105,105)
+GOLD = (255, 215, 0)
 
 #fonts
 font = pygame.font.SysFont('lato', 30)
@@ -82,6 +83,10 @@ for i in range(1, 17):
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
+def draw_centered_text(text, font, color, surface, x, y):
+    text_obj = font.render(text, 1, color)
+    text_rect = text_obj.get_rect(center=(x, y))
+    surface.blit(text_obj, text_rect)
 
 #create balls
 def create_ball(radius, pos):
@@ -123,7 +128,6 @@ pockets = [
     (592,629),
     (1134, 616)
 ]
-
 cushions = [
     [(88,56), (109,77), (555,77), (564, 56)], #each cushion turned into a pymunk body
     [(621,56),(630,77), (1081,77), (1102,56)],
@@ -132,8 +136,6 @@ cushions = [
     [(56,96), (77,117), (77,560), (56,581)],
     [(1143,96), (1122,117), (1122,560), (1143,581)]
 ]
-
-
 #creating cushions
 def create_cushion(poly_dims):
     body = pymunk.Body(body_type= pymunk.Body.STATIC)
@@ -170,10 +172,24 @@ class GameMode:
         self.name = name
         self.pos = pos
         self.rect = pygame.Rect(pos, size)
+        self.color = WHITE
 
     def draw(self, surface):
-        pygame.draw.rect(surface, WHITE, self.rect, 2)
+        pygame.draw.rect(surface, self.color, self.rect, 2)
         draw_text(self.name, font, WHITE, self.pos[0] + 10, self.pos[1] + 10)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.color = WHITE
+            return True
+        return False
+
+    def handle_hover(self, mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
+            self.color = GOLD
+        else:
+            self.color = WHITE
+
 
 
 # Create game modes
@@ -227,17 +243,25 @@ while run:
                 run = False
 
     elif game_state == STATE_GAME_MODE_SELECTION:
+        # Draw "Game Modes" text
+        draw_centered_text('Game Modes', large_font, WHITE, screen, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4)
+
+        # Get the current mouse position
+        mouse_pos = pygame.mouse.get_pos()
+
         for mode in game_modes:
+            mode.handle_hover(mouse_pos)
             mode.draw(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for i, mode in enumerate(game_modes):
-                    if mode.rect.collidepoint(event.pos):
+                    if mode.handle_event(event):
                         game_mode = i
                         game_state = STATE_PLAYING  # Go to playing state after game mode is selected
         pygame.display.flip()
         continue
+
 
     #draw table
     if game_state == STATE_PLAYING:
@@ -287,7 +311,6 @@ while run:
             cue_angle = math.degrees(math.atan2(y_dist, x_dist))
             cue.update(cue_angle)
             cue.draw(screen)
-
         #powerup cue
         if powering_up == True and game_running == True:
             force += 100 * force_direction
@@ -315,7 +338,6 @@ while run:
                 screen.blit(power_bar, 
                             (balls[-1].body.position[0] - 30 + (b * 15), 
                             balls[-1].body.position[1] + 30))
-
 
         elif powering_up == False and taking_shot == True:
             x_impulse = math.cos(math.radians(cue_angle))
