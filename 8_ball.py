@@ -8,8 +8,8 @@ pygame.init()
 pygame.mixer.init()
 
 music_file = 'dungeon.aif'  # Replace with the path to your music file
-pygame.mixer.music.load(music_file)
-pygame.mixer.music.play()
+#pygame.mixer.music.load(music_file)
+#pygame.mixer.music.play()
 
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 678
